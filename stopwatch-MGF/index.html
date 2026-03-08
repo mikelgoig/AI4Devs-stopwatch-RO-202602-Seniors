@@ -1,0 +1,318 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Timer and Countdown</title>
+  <style>
+    :root {
+      --bg: #f3f3f3;
+      --panel: #dfe1f2;
+      --text: #111111;
+      --border: #2f2f2f;
+      --green: #18eb00;
+      --red: #ef1a14;
+      --blue: #2d6cdf;
+      --white: #ffffff;
+      --shadow: 0 10px 30px rgba(0, 0, 0, 0.08);
+      --radius-xl: 28px;
+      --radius-lg: 20px;
+      --radius-md: 14px;
+    }
+
+    * {
+      box-sizing: border-box;
+    }
+
+    html, body {
+      margin: 0;
+      padding: 0;
+      min-height: 100%;
+      font-family: Arial, Helvetica, sans-serif;
+      background: var(--bg);
+      color: var(--text);
+    }
+
+    body {
+      display: flex;
+      justify-content: center;
+      align-items: flex-start;
+      padding: 24px;
+    }
+
+    .app {
+      width: 100%;
+      max-width: 1160px;
+      display: grid;
+      gap: 20px;
+    }
+
+    .header {
+      display: flex;
+      justify-content: center;
+    }
+
+    .mode-switch {
+      display: inline-flex;
+      gap: 8px;
+      padding: 8px;
+      background: var(--white);
+      border: 3px solid var(--border);
+      border-radius: 999px;
+      box-shadow: var(--shadow);
+    }
+
+    .mode-button {
+      border: 0;
+      background: transparent;
+      color: var(--text);
+      font-size: 1rem;
+      font-weight: 700;
+      padding: 12px 20px;
+      border-radius: 999px;
+      cursor: pointer;
+      transition: background 0.2s ease, color 0.2s ease, transform 0.15s ease;
+    }
+
+    .mode-button:hover {
+      transform: translateY(-1px);
+    }
+
+    .mode-button.active {
+      background: var(--blue);
+      color: var(--white);
+    }
+
+    .panel {
+      background: var(--white);
+      border: 3px solid var(--border);
+      border-radius: 32px;
+      padding: 28px;
+      box-shadow: var(--shadow);
+    }
+
+    .display-shell {
+      border: 4px solid var(--border);
+      border-radius: 36px;
+      background: var(--panel);
+      padding: 18px 28px;
+      min-height: 180px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      position: relative;
+      overflow: hidden;
+    }
+
+    .display {
+      font-size: clamp(3rem, 10vw, 8rem);
+      line-height: 1;
+      font-weight: 700;
+      letter-spacing: 0.04em;
+      font-variant-numeric: tabular-nums;
+      text-align: center;
+      user-select: none;
+    }
+
+    .milliseconds-label {
+      position: absolute;
+      right: 32px;
+      bottom: 14px;
+      font-size: clamp(1rem, 2.2vw, 2.25rem);
+      font-weight: 500;
+      line-height: 1;
+      user-select: none;
+    }
+
+    .countdown-config {
+      display: none;
+      grid-template-columns: repeat(3, minmax(0, 1fr));
+      gap: 16px;
+      margin-top: 20px;
+    }
+
+    .app.countdown-mode .countdown-config {
+      display: grid;
+    }
+
+    .field {
+      display: grid;
+      gap: 8px;
+    }
+
+    .field label {
+      font-size: 0.95rem;
+      font-weight: 700;
+    }
+
+    .field input {
+      width: 100%;
+      padding: 16px 14px;
+      border: 3px solid var(--border);
+      border-radius: var(--radius-md);
+      font-size: 1.1rem;
+      font-weight: 700;
+      background: #ffffff;
+      color: var(--text);
+      outline: none;
+    }
+
+    .field input:focus {
+      border-color: var(--blue);
+      box-shadow: 0 0 0 3px rgba(45, 108, 223, 0.16);
+    }
+
+    .field input:disabled {
+      background: #ececec;
+      cursor: not-allowed;
+    }
+
+    .actions {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 18px;
+      margin-top: 26px;
+    }
+
+    .action-button {
+      min-height: 122px;
+      border: 0;
+      border-radius: var(--radius-xl);
+      font-size: clamp(2rem, 5vw, 4rem);
+      font-weight: 500;
+      color: #000000;
+      cursor: pointer;
+      border: 6px solid var(--border);
+      transition: transform 0.15s ease, filter 0.2s ease, opacity 0.2s ease;
+    }
+
+    .action-button:hover:not(:disabled) {
+      transform: translateY(-2px);
+      filter: brightness(1.02);
+    }
+
+    .action-button:active:not(:disabled) {
+      transform: translateY(0);
+    }
+
+    .action-button:disabled {
+      opacity: 0.6;
+      cursor: not-allowed;
+    }
+
+    .action-button.start {
+      background: var(--green);
+    }
+
+    .action-button.clear {
+      background: var(--red);
+    }
+
+    .hint {
+      margin-top: 14px;
+      font-size: 0.95rem;
+      color: #444444;
+      text-align: center;
+    }
+
+    .sr-only {
+      position: absolute;
+      width: 1px;
+      height: 1px;
+      padding: 0;
+      margin: -1px;
+      overflow: hidden;
+      clip: rect(0, 0, 0, 0);
+      white-space: nowrap;
+      border: 0;
+    }
+
+    @media (max-width: 720px) {
+      .panel {
+        padding: 18px;
+      }
+
+      .display-shell {
+        min-height: 132px;
+        padding: 14px 18px;
+      }
+
+      .actions {
+        grid-template-columns: 1fr;
+      }
+
+      .action-button {
+        min-height: 88px;
+      }
+
+      .countdown-config {
+        grid-template-columns: 1fr;
+      }
+
+      .milliseconds-label {
+        right: 18px;
+        bottom: 10px;
+      }
+    }
+  </style>
+</head>
+<body>
+  <main class="app stopwatch-mode" id="app">
+    <header class="header">
+      <div class="mode-switch" role="tablist" aria-label="Timer mode selector">
+        <button
+          id="stopwatchModeButton"
+          class="mode-button active"
+          type="button"
+          role="tab"
+          aria-selected="true"
+        >
+          Stopwatch
+        </button>
+        <button
+          id="countdownModeButton"
+          class="mode-button"
+          type="button"
+          role="tab"
+          aria-selected="false"
+        >
+          Countdown
+        </button>
+      </div>
+    </header>
+
+    <section class="panel" aria-labelledby="appTitle">
+      <h1 id="appTitle" class="sr-only">Timer and Countdown</h1>
+
+      <div class="display-shell" aria-live="polite" aria-atomic="true">
+        <div class="display" id="timeDisplay">00:00:00</div>
+        <div class="milliseconds-label" id="millisecondsDisplay">00</div>
+      </div>
+
+      <div class="countdown-config" id="countdownConfig">
+        <div class="field">
+          <label for="hoursInput">Hours</label>
+          <input id="hoursInput" type="number" min="0" max="99" step="1" value="0" inputmode="numeric" />
+        </div>
+        <div class="field">
+          <label for="minutesInput">Minutes</label>
+          <input id="minutesInput" type="number" min="0" max="59" step="1" value="1" inputmode="numeric" />
+        </div>
+        <div class="field">
+          <label for="secondsInput">Seconds</label>
+          <input id="secondsInput" type="number" min="0" max="59" step="1" value="0" inputmode="numeric" />
+        </div>
+      </div>
+
+      <div class="actions">
+        <button id="startPauseButton" class="action-button start" type="button">Start</button>
+        <button id="clearButton" class="action-button clear" type="button">Clear</button>
+      </div>
+
+      <p class="hint" id="hintText">Start the stopwatch.</p>
+    </section>
+  </main>
+
+  <script src="script.js"></script>
+</body>
+</html>
